@@ -1,5 +1,6 @@
 // Anonymous Fun Chat - server.js
 // Live group chat, no auth, no message persistence, ephemeral in-memory files.
+
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
@@ -30,7 +31,10 @@ setInterval(() => {
 }, 60 * 1000);
 
 // Multer setup (memory storage; no disk writes)
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB max
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB max
+});
 
 // Upload endpoint
 app.post('/upload', upload.single('file'), (req, res) => {
@@ -50,7 +54,14 @@ app.post('/upload', upload.single('file'), (req, res) => {
   });
 
   const link = `/download/${id}`;
-  res.json({ id, link, filename, size: req.file.size, mime: req.file.mimetype, ttlMinutes: TTL_MINUTES });
+  res.json({
+    id,
+    link,
+    filename,
+    size: req.file.size,
+    mime: req.file.mimetype,
+    ttlMinutes: TTL_MINUTES
+  });
 });
 
 // Download endpoint
@@ -64,7 +75,7 @@ app.get('/download/:id', (req, res) => {
 
 // Socket.IO for realtime chat
 io.on('connection', (socket) => {
-  // Broadcast join/leave events (without IPs, nothing personally identifying).
+  // Broadcast join/leave events (no IPs, nothing personal).
   socket.on('hello', (payload) => {
     socket.broadcast.emit('system', { type: 'join', at: Date.now(), name: payload?.name || null });
   });
@@ -74,8 +85,9 @@ io.on('connection', (socket) => {
 
   // Relay messages without storing
   socket.on('chat', (msg) => {
-    // Basic sanitation to avoid huge payloads
-    if (typeof msg?.text === 'string' && msg.text.length > 2000) msg.text = msg.text.slice(0, 2000);
+    if (typeof msg?.text === 'string' && msg.text.length > 2000) {
+      msg.text = msg.text.slice(0, 2000);
+    }
     io.emit('chat', {
       text: (msg?.text || '').toString(),
       name: msg?.name || null,
