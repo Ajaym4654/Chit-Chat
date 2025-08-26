@@ -1,8 +1,5 @@
 // client.js — front-end logic
-
-// 👇 explicitly connect to your Render backend
-const socket = io("https://chit-chat-eyeg.onrender.com");
-
+const socket = io();
 const chatArea = document.getElementById('chatArea');
 const nameInput = document.getElementById('name');
 const msgInput = document.getElementById('msg');
@@ -14,7 +11,7 @@ const emojiPicker = document.getElementById('emojiPicker');
 
 // Generate a cute anon handle if no name
 const anonTag = 'Anon#' + Math.random().toString(36).slice(2, 6);
-nameInput.placeholder = `Name (optional, e.g., ${anonTag})`;
+nameInput.placeholder = Name (optional, e.g., ${anonTag});
 
 // Tell others you joined (only name, if set)
 socket.emit('hello', { name: nameInput.value || null });
@@ -23,14 +20,16 @@ socket.emit('hello', { name: nameInput.value || null });
 socket.on('chat', (data) => {
   addMessage(data.name, data.text, data.at);
 });
+
 // System join/leave
 socket.on('system', (evt) => {
   if (evt.type === 'join') {
-    addSystem(`Someone joined${evt.name ? ' as ' + safe(evt.name) : ''} ✨`);
+    addSystem(Someone joined${evt.name ? ' as ' + safe(evt.name) : ''} ✨);
   } else if (evt.type === 'leave') {
     addSystem('Someone left 👋');
   }
 });
+
 // File shares
 socket.on('fileShared', (f) => {
   addFileMessage(f, f.at);
@@ -41,7 +40,6 @@ document.getElementById('controls').addEventListener('submit', (e) => {
   e.preventDefault();
   const text = msgInput.value.trim();
   if (!text && fileInput.files.length === 0) return;
-
   const name = nameInput.value.trim() || null;
 
   // If there's a text message, send it
@@ -81,11 +79,12 @@ fileInput.addEventListener('change', () => {
   for (const f of files) {
     const chip = document.createElement('span');
     chip.className = 'file-chip';
-    chip.textContent = `${f.name} (${fmtSize(f.size)})`;
+    chip.textContent = ${f.name} (${fmtSize(f.size)});
     const x = document.createElement('span');
     x.textContent = '✕';
     x.className = 'x';
     x.onclick = () => {
+      // remove from FileList is tricky — reset and re-add remaining
       const remain = Array.from(fileInput.files).filter(ff => ff !== f);
       const dt = new DataTransfer();
       remain.forEach(ff => dt.items.add(ff));
@@ -102,15 +101,9 @@ async function uploadFiles(files, name) {
     const form = new FormData();
     form.append('file', file, file.name);
     form.append('filename', file.name);
-
-    // 👇 IMPORTANT: Post to Render backend, not relative /upload
-    const res = await fetch("https://chit-chat-eyeg.onrender.com/upload", { 
-      method: 'POST', 
-      body: form 
-    });
-
+    const res = await fetch('/upload', { method: 'POST', body: form });
     if (!res.ok) {
-      addSystem(`Upload failed for ${file.name} ❌`);
+      addSystem(Upload failed for ${file.name} ❌);
       continue;
     }
     const info = await res.json();
@@ -128,6 +121,7 @@ async function uploadFiles(files, name) {
 
 // Emoji picker — small built-in set
 const EMOJIS = ['😀','😁','😂','🤣','😊','🥰','😘','😎','🤓','🤩','😇','😉','🙂','🤗','🤭','🤫','🤔','🙃','😴','🤤','😜','🤪','😝','😏','😬','😐','😑','😶','🙄','😳','🥺','😤','😡','🤬','😱','😭','🥲','🤝','🙏','👏','🙌','👍','👎','🤙','👌','🤌','👀','💪','🫶','❤️','🩷','💖','✨','🔥','🎉','🎊','🫡','🍿','🍕','🍪','🧋','☕','🌶️','🧠','🦾','🧡','💙','💜','🤍','🤎'];
+
 function buildEmojiPicker() {
   emojiPicker.innerHTML = '';
   EMOJIS.forEach(e => {
@@ -145,6 +139,7 @@ function buildEmojiPicker() {
   });
 }
 buildEmojiPicker();
+
 emojiBtn.addEventListener('click', () => {
   emojiPicker.classList.toggle('open');
 });
@@ -152,6 +147,8 @@ emojiBtn.addEventListener('click', () => {
 function addMessage(name, text, at) {
   const el = document.createElement('div');
   el.className = 'msg';
+  const head = document.createElement('div');
+  head.className = 'head';
   const nameEl = document.createElement('span');
   nameEl.className = 'name';
   nameEl.innerHTML = name ? safe(name) : 'Anon';
@@ -161,11 +158,9 @@ function addMessage(name, text, at) {
   const body = document.createElement('div');
   body.className = 'body';
   body.innerHTML = linkify(safe(text));
-
   el.appendChild(nameEl);
   el.appendChild(timeEl);
   el.appendChild(body);
-
   chatArea.appendChild(el);
   chatArea.scrollTop = chatArea.scrollHeight;
 }
@@ -181,8 +176,7 @@ function addFileMessage(f, at) {
   timeEl.textContent = ' · ' + new Date(at).toLocaleTimeString();
   const body = document.createElement('div');
   body.className = 'body';
-  body.innerHTML = `📎 <strong>${safe(f.filename)}</strong> — ${fmtSize(f.size)} · <a href="${f.link}" download>Download</a> <span class="time"> (expires in ${f.ttlMinutes}m)</span>`;
-
+  body.innerHTML = 📎 <strong>${safe(f.filename)}</strong> — ${fmtSize(f.size)} · <a href="${f.link}" download>Download</a> <span class="time"> (expires in ${f.ttlMinutes}m)</span>;
   el.appendChild(who);
   el.appendChild(timeEl);
   el.appendChild(body);
@@ -201,12 +195,18 @@ function addSystem(text) {
 function safe(s) {
   return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
+
 function linkify(text) {
+  // very simple linkifier
   return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 }
+
 function fmtSize(n) {
   const units = ['B','KB','MB','GB'];
   let i=0, v=n;
-  while (v>=1024 && i<units.length-1) { v/=1024; i++; }
-  return `${v.toFixed( (i===0)?0:1 )} ${units[i]}`;
+  while (v>=1024 && i<units.length-1) {
+    v/=1024;
+    i++;
+  }
+  return ${v.toFixed( (i===0)?0:1 )} ${units[i]};
 }
