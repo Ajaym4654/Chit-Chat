@@ -27,8 +27,7 @@
       <div class="row">
         <textarea id="msg" rows="1" placeholder="Type a message… (press Enter to send)" maxlength="2000"></textarea>
         <button type="button" id="emojiBtn" title="Emoji">😊</button>
-        <label class="fileLabel" title="Send a file">
-          📎
+        <label class="fileLabel" title="Send a file"> 📎
           <input id="fileInput" type="file" hidden />
         </label>
         <button id="sendBtn" class="send" type="submit">Send</button>
@@ -42,8 +41,7 @@
     </footer>
   </div>
 
-  <!-- Point directly to your Render backend -->
-  <script src="https://chit-chat-eyeg.onrender.com/socket.io/socket.io.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script src="client.js"></script>
 </body>
 </html>
