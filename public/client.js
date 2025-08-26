@@ -1,5 +1,8 @@
 // client.js — front-end logic
-const socket = io();
+
+// 👇 explicitly connect to your Render backend
+const socket = io("https://chit-chat-eyeg.onrender.com");
+
 const chatArea = document.getElementById('chatArea');
 const nameInput = document.getElementById('name');
 const msgInput = document.getElementById('msg');
@@ -83,7 +86,6 @@ fileInput.addEventListener('change', () => {
     x.textContent = '✕';
     x.className = 'x';
     x.onclick = () => {
-      // remove from FileList is tricky — reset and re-add remaining
       const remain = Array.from(fileInput.files).filter(ff => ff !== f);
       const dt = new DataTransfer();
       remain.forEach(ff => dt.items.add(ff));
@@ -100,7 +102,13 @@ async function uploadFiles(files, name) {
     const form = new FormData();
     form.append('file', file, file.name);
     form.append('filename', file.name);
-    const res = await fetch('/upload', { method: 'POST', body: form });
+
+    // 👇 IMPORTANT: Post to Render backend, not relative /upload
+    const res = await fetch("https://chit-chat-eyeg.onrender.com/upload", { 
+      method: 'POST', 
+      body: form 
+    });
+
     if (!res.ok) {
       addSystem(`Upload failed for ${file.name} ❌`);
       continue;
@@ -144,8 +152,6 @@ emojiBtn.addEventListener('click', () => {
 function addMessage(name, text, at) {
   const el = document.createElement('div');
   el.className = 'msg';
-  const head = document.createElement('div');
-  head.className = 'head';
   const nameEl = document.createElement('span');
   nameEl.className = 'name';
   nameEl.innerHTML = name ? safe(name) : 'Anon';
@@ -196,7 +202,6 @@ function safe(s) {
   return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 }
 function linkify(text) {
-  // very simple linkifier
   return text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 }
 function fmtSize(n) {
